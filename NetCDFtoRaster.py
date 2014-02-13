@@ -35,7 +35,7 @@ try:
         print "ERROR: no input file was provided"
         exit(1)
     elif args.outdir == None:
-        print "ERROR: no output file was provided"
+        print "ERROR: no output directory was provided"
         exit(1)
     else:
         infile = args.infile
