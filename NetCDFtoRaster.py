@@ -1,5 +1,5 @@
 #======================================================================
-# Author, Date: John Broussard, (Edited: 01/15/2014)
+# Author, Date: John Broussard
 # Purpose: Convert data within a NetCDF database to a raster, then
 #           post to ArcGIS Online account.
 #
@@ -18,12 +18,13 @@
 
 # Import the modules we'll be using and set a shortcut
 import arcpy, netCDF4, argparse, os
-import arcpy.mapping as map
 
 # Set up argument parsing: 1 input and 1 output
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--infile", dest="infile", action="store", help="file input to script")
-parser.add_argument("-o", "--outdir", dest="outdir", action="store", help="file putput from script")
+parser.add_argument("-i", "--infile", dest="infile", action="store", help="File input to script")
+parser.add_argument("-o", "--outdir", dest="outdir", action="store", help="File output from script")
+parser.add_argument("-t", "--timeslice", dest="timeslice", default='0', action="store",
+                    help="This is the timeslice (as index) to use if there are multiple time steps in the netcdf file. If specified timeslice is not within those allowed by the input file's time variable, then the first index (0) is used by default.")
 
 
 try:
@@ -47,20 +48,31 @@ try:
 
     # Open the model (netCDF) file
     rootgroup = netCDF4.Dataset(infile, 'r')
-
+    
+    # If timeslice used, check that it is within the range
+    if ('time' in rootgroup.variables) and (int(args.timeslice) in range(rootgroup.variables['time'].shape[0])):
+        timeslice = args.timeslice
+    else:
+        timeslice = "0"
+    
     # Get lat (and lon) resolution
     resolution = rootgroup.variables['lat'][0] - rootgroup.variables['lat'][1]
 
+    
     # Get the variables contained in the infile that have lat and lon as dimensions
     # (These are the mappable variables) and create rasters for each.
     # Right now, only maps one slice of data, even if there are more time slices.
     variablesToMap = []
     for var in rootgroup.variables:
         if 'lat' in rootgroup.variables[var].dimensions and 'lon' in rootgroup.variables[var].dimensions:
-            ##variablesToMap.append(var)
-            arcpy.MakeNetCDFTableView_md(infile, var, var, "lat;lon","","BY_INDEX")
-            arcpy.MakeXYEventLayer_management(var,"lon","lat",var + "_pts")
-            arcpy.FeatureToRaster_conversion(var + "_pts", var, var, resolution)
+            if 'time' in rootgroup.variables[var].dimensions:
+                arcpy.MakeNetCDFTableView_md(infile, var, var, "lat;lon","time " + timeslice, "BY_INDEX")
+                arcpy.MakeXYEventLayer_management(var,"lon","lat",var + "_pts")
+                arcpy.FeatureToRaster_conversion(var + "_pts", var, var + "_" + timeslice, resolution)
+            else:
+                arcpy.MakeNetCDFTableView_md(infile, var, var, "lat;lon","","BY_INDEX")
+                arcpy.MakeXYEventLayer_management(var,"lon","lat",var + "_pts")
+                arcpy.FeatureToRaster_conversion(var + "_pts", var, var, resolution)
 
     rootgroup.close()
 
