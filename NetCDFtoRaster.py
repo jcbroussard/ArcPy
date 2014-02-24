@@ -1,4 +1,4 @@
-#======================================================================
+#=========================================================================================================
 # Author, Date: John Broussard
 # Purpose: Convert data within a NetCDF database to a raster, then
 #           post to ArcGIS Online account.
@@ -13,8 +13,9 @@
 #   3) Save each raster to specified folder
 # 
 # Usage:
-# 	NetCDFtoRaster.py 
-#======================================================================
+# 	NetCDFtoRaster.py -i infile -o outdir -t timesliceAsIndex
+#	example: NetCDFtoRaster.py -i cruncep_uwind_1901.nc -o uwind1901_rasters -t 230
+#=========================================================================================================
 
 # Import the modules we'll be using and set a shortcut
 import arcpy, netCDF4, argparse, os
